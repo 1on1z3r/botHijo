@@ -1,6 +1,6 @@
 
 message_count = {}
-canales = ['#1on1zer', '#patrii19', '#pobrelokopsn']
+canales = ['#1on1zer', '#patrii19', '#pobrelokopsn','#ibai']
 exclusiones_usuarios = ['nightbot',
                         'streamelements',
                         "comanderroot",
