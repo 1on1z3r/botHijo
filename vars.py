@@ -1,12 +1,13 @@
 
 message_count = {}
-canales = ['#1on1zer', '#patrii19', '#pobrelokopsn','#ibai']
+canales = ['#1on1zer', '#patrii19', '#pobrelokopsn', "#legionlooterana"]
+# canales = ['#1on1zer']
+
 exclusiones_usuarios = ['nightbot',
                         'streamelements',
                         "comanderroot",
                         'testigo19',
-                        'moobot',
-                        'patrii19'
+                        'moobot'
                         ]
 
 chistes_profesores = [
@@ -45,3 +46,26 @@ usuario = 'daniel'
 clave = '*ek0vA979'
 db = '8267796_dani'
 datosConexion = {"host": server, "port": 3306, "user": usuario, "passwd": clave, "db": db}
+
+
+
+peces_excepcionales = [
+    'Alfa-beta eónico',
+    'Carpa polilla susurrante',
+    'Placodermo vexasperante',
+    'Pez hacha de Khepri'
+]
+peces_leyenda = [
+    'Drangón (barroco)',
+    'Salmón del carroñero',
+    'Esturión constante',
+    'No retornoballo',
+    'Bacalao de Duello',
+    'Abadejo de la tentación',
+    'Sapo de ignición',
+    'Bigotes ensorcedores',
+    'Langosta de siervos',
+    'Jurel de Galliard'
+]
+
+pesca_usuarios=[]
