@@ -65,7 +65,7 @@ def getPesca(nick, hora):
     else:
         resultado = "@"+nick+" vaya.. parece que no tienes cebos!! Tendrás que farmear un ratito más!
 
-    # pesca_usuarios[nick][hora] = pesca_usuarios[nick][hora] + 1
+    pesca_usuarios[nick+hora] = pesca_usuarios[nick+hora] + 1
     return resultado
 
 
