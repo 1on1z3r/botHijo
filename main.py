@@ -40,25 +40,30 @@ def getHora():
 
 #print("Seguidores de " + usuario + ": " + str(len(respuestajson['follows'])))
 
-def getPesca(nick):
-    hora = time.strftime("%H")
+def getPesca(nick, hora):
     resultado = ''
     # logica aplastante de limitador por hora
+    if not nick+hora in pesca_usuarios:
+        pesca_usuarios[usuario+nick] = 0
     # pesca_usuarios[nick][hora] = pesca_usuarios[nick][hora] + 1
     peso = random.randint(0, 30)
     decimal = random.randint(0, 99)
     tipo = random.randint(1, 10)
-    if pesca_usuarios[nick][hora] <= 3:
-        if tipo in [3, 8]:
-            longitud = len(peces_excepcionales)-1
-            pez = peces_excepcionales[random.randint(0, longitud)]
-            resultado = "@"+nick+" Squid1 Squid2 Squid3 Squid2 Squid4 has pescado el pez excepcional "+ str(pez) + " de "+str(peso)+"."+str(decimal)+"kg! Enhorabuena! "
-        elif tipo in [1, 2, 4, 9]:
-            longitud = len(peces_leyenda)-1
-            pez = peces_leyenda[random.randint(0, longitud)]
-            resultado = "@"+nick+" SabaPing Has pescado un pez de leyenda " + pez + " de "+str(peso)+"."+str(decimal)+"kg! SabaPing"
-        else:
-            resultado = "@"+nick+" BibleThump Vaya, has pescado una miñoca de "+str(peso)+"."+str(decimal)+"kg! Más suerte la próxima vez BibleThump"
+    cebos = 3-pesca_usuarios[usuario+nick]
+    if pesca_usuarios[usuario+nick] <=3:
+        if pesca_usuarios[nick][hora] <= 3:
+            if tipo in [3, 8]:
+                longitud = len(peces_excepcionales)-1
+                pez = peces_excepcionales[random.randint(0, longitud)]
+                resultado = "@"+nick+" Squid1 Squid2 Squid3 Squid2 Squid4 has pescado el pez excepcional "+ str(pez) + " de "+str(peso)+"."+str(decimal)+"kg! Enhorabuena! (Te quedan "+cebos+" cebos)"
+            elif tipo in [1, 2, 4, 9]:
+                longitud = len(peces_leyenda)-1
+                pez = peces_leyenda[random.randint(0, longitud)]
+                resultado = "@"+nick+" SabaPing Has pescado un pez de leyenda " + pez + " de "+str(peso)+"."+str(decimal)+"kg! SabaPing (Te quedan "+cebos+" cebos)""
+            else:
+                resultado = "@"+nick+" BibleThump Vaya, has pescado una miñoca de "+str(peso)+"."+str(decimal)+"kg! Más suerte la próxima vez BibleThump (Te quedan "+cebos+" cebos)""
+    else:
+        resultado = "@"+nick+" vaya.. parece que no tienes cebos!! Tendrás que farmear un ratito más!
 
     # pesca_usuarios[nick][hora] = pesca_usuarios[nick][hora] + 1
     return resultado
@@ -217,7 +222,7 @@ class Bot(commands.Bot):
     # Comando !pescar
     @commands.command()
     async def pescar(self, ctx: commands.Context):
-        respuesta = getPesca(ctx.author.name.lower())
+        respuesta = getPesca(ctx.author.name.lower(),time.strftime("%H))
         # logica
         if respuesta != '':
             await ctx.send(f'/me ' + respuesta)
