@@ -45,10 +45,15 @@ def getHora():
 def ejecutaSQL(query=""):
     conexion = pymysql.connect(**datosConexion)
     cursor = conexion.cursor(pymysql.cursors.DictCursor)
-    print("[QUERY] " + query)
-    cursor.execute(query)
-    cursor.close()
-    conexion.close()
+    try:
+        print("[QUERY] " + query)
+        cursor.execute(query)
+        conexion.commit()  # Realiza commit de la transacción
+    except Exception as e:
+        print(f"Error al ejecutar SQL: {e}")
+    finally:
+        cursor.close()
+        conexion.close()
 
 
 def getScorePesca(nick, canal):
@@ -63,10 +68,16 @@ def getScorePesca(nick, canal):
     return puntos
 
 
-def incScorePesca(nick, canal, exoticos, leyenda, minoca):
-    query = "UPDATE pesca SET PES_Puntos = 18, PES_Exoticos = PES_Exoticos + " + str(
-        exoticos) + ", PES_Leyenda = PES_Leyenda + " + str(leyenda) + ", PES_Minoca = PES_Minoca + " + str(
-        minoca) + " WHERE PES_Usuario = '" + nick + "' AND PES_Canal = '" + canal + "' "
+def incScorePesca(nick, canal, puntosInc, exoticos, leyenda, minoca):
+    query = f"""
+    UPDATE pesca
+    SET
+        PES_Puntos = PES_Puntos + {puntosInc},
+        PES_Exoticos = PES_Exoticos + {exoticos},
+        PES_Leyenda = PES_Leyenda + {leyenda},
+        PES_Minoca = PES_Minoca + {minoca}
+    WHERE PES_Usuario = '{nick}' AND PES_Canal = '{canal}'
+    """
     print("[INC PESCA] " + query)
     ejecutaSQL(query)
 
@@ -96,15 +107,15 @@ def getPesca(nick, hora, canal):
     cebos = 3 - pesca_usuarios[usuario]
     if pesca_usuarios[usuario] <= 3:
         if tipo in [3]:
-            exoticos = exoticos + 1
+            exoticos += 1
             puntosInc = 8
             longitud = len(peces_excepcionales) - 1
             pez = peces_excepcionales[random.randint(0, longitud)]
             resultado = "@" + nick + " Squid1 Squid2 Squid3 Squid2 Squid4 has pescado el pez excepcional " + str(
                 pez) + " de " + str(peso) + "." + str(decimal) + "kg! Enhorabuena! Has ganado " + str(
                 puntosInc) + " puntos. (Te quedan " + str(cebos) + " cebos)"
-        elif tipo in [1, 2, 4, 9]:
-            leyenda = leyenda + 1
+        elif tipo in [1, 2, 4, 5, 6, 8, 9]:
+            leyenda += 1
             puntosInc = 3
             longitud = len(peces_leyenda) - 1
             pez = peces_leyenda[random.randint(0, longitud)]
@@ -120,7 +131,7 @@ def getPesca(nick, hora, canal):
     puntosActuales = puntosActuales + puntosInc
     resultado = resultado + " [Puntos actuales: " + str(puntosActuales) + "]"
 
-    incScorePesca(nick, canal, exoticos, leyenda, minoca)
+    incScorePesca(nick, canal, puntosActuales, exoticos, leyenda, minoca)
     pesca_usuarios[usuario] = pesca_usuarios[usuario] + 1
     return resultado
 
@@ -213,17 +224,17 @@ def getRankingDiario(canal):
 
 
 def getRankingPesca(canal):  # modificar
-    texto = "DinoDance Mostrando ranking de mensajes diario: "
+    texto = "DinoDance Mostrando ranking de pesca: "
     fecha = getFechaMySql()
     # canal = "patrii19"
     conexion = pymysql.connect(**datosConexion)
     cursor = conexion.cursor(pymysql.cursors.DictCursor)
-    query = "SELECT MEN_Usuario, MEN_Contador FROM mensajes WHERE MEN_Canal = '" + canal + "' AND MEN_Fecha = '" + fecha + "' ORDER BY MEN_Contador DESC LIMIT 5 "
+    query = "SELECT PES_Usuario, PES_Puntos FROM pesca WHERE PES_Canal = '"+canal+"' ORDER BY PES_Puntos DESC LIMIT 5"
     cursor.execute(query)
     result = cursor.fetchall()
     contador = 1
     for linea in result:
-        texto = texto + str(contador) + ". " + linea['MEN_Usuario'] + " (" + str(linea['MEN_Contador']) + ") "
+        texto = texto + str(contador) + ". " + linea['PES_Usuario'] + " (" + str(linea['PES_Puntos']) + ") "
         contador = contador + 1
     return texto
 
@@ -301,6 +312,11 @@ class Bot(commands.Bot):
         if autor == "1on1zer" or autor == "patrii19" or autor == "streamelements":
             respuesta = getRankingDiario(ctx.channel.name.lower())
             await ctx.send(f'/me ' + respuesta)
+            
+    @commands.command()
+    async def rankingpesca(self, ctx: commands.Context):
+        respuesta = getRankingPesca(ctx.channel.name.lower())
+        await ctx.send(f'/me ' + respuesta)
 
     #EXPERIMENTAL PESCAR -------------------------------------------------------------------------------
     # Comando !pescar
