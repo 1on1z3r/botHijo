@@ -13,6 +13,7 @@ from vars import *
 # import openai
 # from twitchAPI.twitch import Twitch
 
+
 def get_chiste_profesor():
     numero = random.randint(0, len(chistes_profesores) - 1)
     print(numero)
@@ -40,40 +41,93 @@ def getHora():
 
 #print("Seguidores de " + usuario + ": " + str(len(respuestajson['follows'])))
 
-def getPesca(nick, hora):
+
+def ejecutaSQL(query=""):
+    conexion = pymysql.connect(**datosConexion)
+    cursor = conexion.cursor(pymysql.cursors.DictCursor)
+    print("[QUERY] " + query)
+    cursor.execute(query)
+    cursor.close()
+    conexion.close()
+
+
+def getScorePesca(nick, canal):
+    conexion = pymysql.connect(**datosConexion)
+    cursor = conexion.cursor(pymysql.cursors.DictCursor)
+    query = "SELECT PES_Puntos FROM pesca WHERE PES_Usuario = '" + nick + "' AND PES_Canal ='" + canal + "' LIMIT 1"
+    print('[PESCA] ' + query)
+    cursor.execute(query)
+    result = cursor.fetchall()
+    for linea in result:
+        puntos = linea['PES_Puntos']
+    return puntos
+
+
+def incScorePesca(nick, canal, exoticos, leyenda, minoca):
+    query = "UPDATE pesca SET PES_Puntos = 18, PES_Exoticos = PES_Exoticos + " + str(
+        exoticos) + ", PES_Leyenda = PES_Leyenda + " + str(leyenda) + ", PES_Minoca = PES_Minoca + " + str(
+        minoca) + " WHERE PES_Usuario = '" + nick + "' AND PES_Canal = '" + canal + "' "
+    print("[INC PESCA] " + query)
+    ejecutaSQL(query)
+
+
+def getPesca(nick, hora, canal):
+    #--------------------------------------------------------------------------------------
+    hasRegistroPesca(nick, canal)
+    puntosActuales = getScorePesca(nick, canal)
+
     resultado = ''
+    puntosInc = 0
+
+    usuario = nick + str(hora)
     # logica aplastante de limitador por hora
-    if not nick+hora in pesca_usuarios:
-        pesca_usuarios[usuario+nick] = 0
+    if not usuario in pesca_usuarios:
+        pesca_usuarios[usuario] = 0
     # pesca_usuarios[nick][hora] = pesca_usuarios[nick][hora] + 1
+
     peso = random.randint(0, 30)
     decimal = random.randint(0, 99)
     tipo = random.randint(1, 10)
-    cebos = 3-pesca_usuarios[usuario+nick]
-    if pesca_usuarios[usuario+nick] <=3:
-        if pesca_usuarios[nick][hora] <= 3:
-            if tipo in [3, 8]:
-                longitud = len(peces_excepcionales)-1
-                pez = peces_excepcionales[random.randint(0, longitud)]
-                resultado = "@"+nick+" Squid1 Squid2 Squid3 Squid2 Squid4 has pescado el pez excepcional "+ str(pez) + " de "+str(peso)+"."+str(decimal)+"kg! Enhorabuena! (Te quedan "+cebos+" cebos)"
-            elif tipo in [1, 2, 4, 9]:
-                longitud = len(peces_leyenda)-1
-                pez = peces_leyenda[random.randint(0, longitud)]
-                resultado = "@"+nick+" SabaPing Has pescado un pez de leyenda " + pez + " de "+str(peso)+"."+str(decimal)+"kg! SabaPing (Te quedan "+cebos+" cebos)""
-            else:
-                resultado = "@"+nick+" BibleThump Vaya, has pescado una miñoca de "+str(peso)+"."+str(decimal)+"kg! Más suerte la próxima vez BibleThump (Te quedan "+cebos+" cebos)""
-    else:
-        resultado = "@"+nick+" vaya.. parece que no tienes cebos!! Tendrás que farmear un ratito más!
 
-    pesca_usuarios[nick+hora] = pesca_usuarios[nick+hora] + 1
+    exoticos = 0
+    leyenda = 0
+    minoca = 0
+
+    cebos = 3 - pesca_usuarios[usuario]
+    if pesca_usuarios[usuario] <= 3:
+        if tipo in [3]:
+            exoticos = exoticos + 1
+            puntosInc = 8
+            longitud = len(peces_excepcionales) - 1
+            pez = peces_excepcionales[random.randint(0, longitud)]
+            resultado = "@" + nick + " Squid1 Squid2 Squid3 Squid2 Squid4 has pescado el pez excepcional " + str(
+                pez) + " de " + str(peso) + "." + str(decimal) + "kg! Enhorabuena! Has ganado " + str(
+                puntosInc) + " puntos. (Te quedan " + str(cebos) + " cebos)"
+        elif tipo in [1, 2, 4, 9]:
+            leyenda = leyenda + 1
+            puntosInc = 3
+            longitud = len(peces_leyenda) - 1
+            pez = peces_leyenda[random.randint(0, longitud)]
+            resultado = "@" + nick + " SabaPing Has pescado un pez de leyenda " + pez + " de " + str(
+                peso) + "." + str(decimal) + "kg! Has ganado " + str(
+                puntosInc) + " puntos. SabaPing (Te quedan " + str(cebos) + " cebos)"
+        else:
+            resultado = "@" + nick + " BibleThump Vaya, has pescado una miñoquiña de " + str(peso) + "." + str(
+                decimal) + "kg! Más suerte la próxima vez BibleThump (Te quedan " + str(cebos) + " cebos)"
+    else:
+        resultado = "@" + nick + " vaya.. parece que no tienes cebos!! Tendrás que farmear un ratito más!"
+
+    puntosActuales = puntosActuales + puntosInc
+    resultado = resultado + " [Puntos actuales: " + str(puntosActuales) + "]"
+
+    incScorePesca(nick, canal, exoticos, leyenda, minoca)
+    pesca_usuarios[usuario] = pesca_usuarios[usuario] + 1
     return resultado
 
 
 def hasRegistro(usuario, canal):
     if usuario not in exclusiones_usuarios:
-        # cuentaFollowers(usuario)
         canal.replace("#", "")
-        # devuelve true si existe el registro
         conexion = pymysql.connect(**datosConexion)
         cursor = conexion.cursor(pymysql.cursors.DictCursor)
         query = "SELECT * FROM mensajes WHERE MEN_Usuario = '" + usuario + "' AND MEN_Fecha = DATE_FORMAT(NOW(), '%Y-%m-%d') AND MEN_Canal='" + canal + "'"
@@ -92,6 +146,24 @@ def hasRegistro(usuario, canal):
         conexion.close()
 
 
+def hasRegistroPesca(usuario, canal):
+    if usuario not in exclusiones_usuarios:
+        canal.replace("#", "")
+        conexion = pymysql.connect(**datosConexion)
+        cursor = conexion.cursor(pymysql.cursors.DictCursor)
+        query = "SELECT * FROM pesca WHERE PES_Usuario = '" + usuario + "' AND PES_Canal='" + canal + "'"
+        print("[HAS REGISTRO PESCA] " + query)
+        cursor.execute(query)
+        if cursor.rowcount > 0:
+            return True
+        else:
+            creaRegistroPesca(usuario, canal)
+            return False
+
+        cursor.close()
+        conexion.close()
+
+
 def incMensaje(usuario, canal):
     if usuario not in exclusiones_usuarios:
         canal.replace("#", "")
@@ -101,18 +173,14 @@ def incMensaje(usuario, canal):
         print("[QUERY] " + query)
 
 
-def ejecutaSQL(query=""):
-    if query != "":
-        conexion = pymysql.connect(**datosConexion)
-        cursor = conexion.cursor(pymysql.cursors.DictCursor)
-        print("[QUERY] " + query)
-        cursor.execute(query)
-        cursor.close()
-        conexion.close()
-
-
 def creaRegistro(usuario, canal):
     consulta = "INSERT INTO mensajes(MEN_Fecha,MEN_Usuario,MEN_Canal,BOT_ID, MEN_Contador) VALUES(now(),'" + usuario + "','" + canal + "',1,0)"
+    ejecutaSQL(consulta)
+
+
+def creaRegistroPesca(usuario, canal):
+    consulta = "INSERT INTO pesca(PES_Usuario, PES_Canal) VALUES('" + usuario + "','" + canal + "')"
+    print("[CREA PESCA]" + consulta)
     ejecutaSQL(consulta)
 
 
@@ -129,6 +197,22 @@ toLog(msj)
 
 
 def getRankingDiario(canal):
+    texto = "DinoDance Mostrando ranking de mensajes diario: "
+    fecha = getFechaMySql()
+    # canal = "patrii19"
+    conexion = pymysql.connect(**datosConexion)
+    cursor = conexion.cursor(pymysql.cursors.DictCursor)
+    query = "SELECT MEN_Usuario, MEN_Contador FROM mensajes WHERE MEN_Canal = '" + canal + "' AND MEN_Fecha = '" + fecha + "' ORDER BY MEN_Contador DESC LIMIT 5 "
+    cursor.execute(query)
+    result = cursor.fetchall()
+    contador = 1
+    for linea in result:
+        texto = texto + str(contador) + ". " + linea['MEN_Usuario'] + " (" + str(linea['MEN_Contador']) + ") "
+        contador = contador + 1
+    return texto
+
+
+def getRankingPesca(canal):  # modificar
     texto = "DinoDance Mostrando ranking de mensajes diario: "
     fecha = getFechaMySql()
     # canal = "patrii19"
@@ -222,7 +306,7 @@ class Bot(commands.Bot):
     # Comando !pescar
     @commands.command()
     async def pescar(self, ctx: commands.Context):
-        respuesta = getPesca(ctx.author.name.lower(),time.strftime("%H))
+        respuesta = getPesca(ctx.author.name.lower(), time.strftime("%H"), ctx.channel.name.lower())
         # logica
         if respuesta != '':
             await ctx.send(f'/me ' + respuesta)
