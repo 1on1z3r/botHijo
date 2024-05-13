@@ -1,7 +1,7 @@
 
 message_count = {}
-canales = ['#1on1zer', '#patrii19', '#pobrelokopsn', "#legionlooterana"]
-# canales = ['#1on1zer']
+# canales = ['#1on1zer', '#patrii19', '#pobrelokopsn', "#legionlooterana"]
+canales = ['#patrii19']
 
 exclusiones_usuarios = ['nightbot',
                         'streamelements',
@@ -68,4 +68,4 @@ peces_leyenda = [
     'Jurel de Galliard'
 ]
 
-pesca_usuarios=[]
+pesca_usuarios={}
